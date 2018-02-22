@@ -17,15 +17,13 @@ This is an unofficial, open-source for Apache + PHP based projects that run on D
     SQLite3
     Sybase
 
-## Packages enabled
+## Modules enabled
 
     php7.2-bcmath     - Bcmath module for PHP
     php7.2-bz2        - bzip2 module for PHP
     php7.2-curl       - CURL module for PHP
     php7.2-dba        - DBA module for PHP
-    php7.2-dev        - Files for PHP7.2 module development
     php7.2-enchant    - Enchant module for PHP
-    php7.2-fpm        - Server-side, HTML-embedded scripting language (FPM-CGI binary)
     php7.2-gd         - GD module for PHP
     php7.2-gmp        - GMP module for PHP
     php7.2-imap       - IMAP module for PHP

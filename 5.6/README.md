@@ -17,20 +17,17 @@ This is an unofficial, open-source for Apache + PHP based projects that run on D
     SQLite3
     Sybase
 
-## Packages enabled
+## Modules enabled
 
     php5.6-bcmath     - Bcmath module for PHP
     php5.6-bz2        - bzip2 module for PHP
     php5.6-curl       - CURL module for PHP
     php5.6-dba        - DBA module for PHP
-    php5.6-dev        - Files for PHP7.2 module development
     php5.6-enchant    - Enchant module for PHP
-    php5.6-fpm        - Server-side, HTML-embedded scripting language (FPM-CGI binary)
     php5.6-gd         - GD module for PHP
     php5.6-gmp        - GMP module for PHP
     php5.6-imap       - IMAP module for PHP
     php5.6-interbase  - Interbase module for PHP
-    php5.6-imagick    - Provides a wrapper to the ImageMagick library
     php5.6-intl       - Internationalisation module for PHP
     php5.6-json       - JSON module for PHP
     php5.6-ldap       - LDAP module for PHP
