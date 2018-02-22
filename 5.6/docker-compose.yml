@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  docker-lap5-deb:
+    build: .
+    image: docker-lap5-deb:1.0
+    container_name: docker-lap5-deb
+    ports:
+      - "8005:80"
+      - "4435:443"
+    restart: always
+    volumes:
+      - /home/luis/www:/var/www/html
