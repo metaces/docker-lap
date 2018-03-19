@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  docker-lap7-deb:
+    build: .
+    image: docker-lap7-deb:1.0
+    container_name: docker-lap7-deb
+    ports:
+      - "8087:80"
+      - "4437:443"
+    restart: always
+    volumes:
+      - /home/luis/www:/var/www/html
