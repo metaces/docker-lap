@@ -13,13 +13,16 @@ ENV LOCALE pt_BR.UTF-8
 # PHP Timezone
 ENV TZ=America/Maceio
 
+# PHP default_charset
+ENV DEFAULT_CHARSET=
+
 # Set repositories
 RUN \
     echo "deb http://ftp.br.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
     echo "deb-src http://ftp.br.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security stretch/updates main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb-src http://security.debian.org/debian-security stretch/updates main contrib non-free" >> /etc/apt/sources.list && \
-    apt-get -qq update && apt-get -qqy upgrade
+    apt-get -qq update --fix-missing && apt-get -qqy upgrade
 
 # Install some basic tools needed for deployment
 RUN apt-get -yqq install \
@@ -35,6 +38,7 @@ RUN apt-get -yqq install \
     patch \
     rsync \
     vim \
+    iputils-ping \
     openssh-client \
     git \
     bash-completion \
@@ -55,7 +59,7 @@ RUN \
 RUN \
     apt-get -yqq install apt-transport-https lsb-release ca-certificates && \
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list && \
+    echo "deb https://packages.sury.org/php/ stretch main" > /etc/apt/sources.list.d/php.list && \
     apt-get -qq update && apt-get -qqy upgrade
 
 # Install PHP5.6 with Xdebug (dev environment). WARNING with install php5.6-apcu.
@@ -92,7 +96,7 @@ RUN apt-get -yqq install \
     php5.6-redis \
     php5.6-snmp \
     php5.6-soap \
-    php5.6-solr \
+#    php5.6-solr \
     php5.6-sqlite3 \
     php5.6-ssh2 \
     php5.6-sybase \
@@ -112,6 +116,12 @@ RUN \
     dpkg-reconfigure --frontend noninteractive tzdata && \
     echo "date.timezone = \"$TZ\";" > /etc/php/5.6/apache2/conf.d/timezone.ini && \
     echo "date.timezone = \"$TZ\";" > /etc/php/5.6/cli/conf.d/timezone.ini
+
+# PHP default charset
+RUN sed -i -e "s/default_charset = \"UTF-8\"/default_charset = $DEFAULT_CHARSET/" /etc/php/5.6/apache2/php.ini
+
+# PHP short tag
+RUN sed -i -e "s/short_open_tag = Off/short_open_tag = On/" /etc/php/5.6/apache2/php.ini
 
 # Install manually xhprof
 RUN \
@@ -197,6 +207,9 @@ RUN a2enmod \
     status \
     ssl
 
+# Apache2 rewrite
+RUN sed -i -e "s/AllowOverride None/AllowOverride All/g" /etc/apache2/apache2.conf
+
 # Install composer (latest version) | prestissimo to speed up composer
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
@@ -240,6 +253,7 @@ WORKDIR /var/www/html
 VOLUME /var/www/html
 
 COPY scripts/apache2-foreground /usr/bin/
+RUN chmod +x /usr/bin/apache2-foreground
 
 EXPOSE 80 443
 

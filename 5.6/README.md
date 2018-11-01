@@ -55,9 +55,24 @@ This is an unofficial, open-source for Apache + PHP based projects that run on D
 You are up and running in two simple steps:
 
     $ cd docker-ldap/5.6
-    $ docker-compose up --build -d 
+    $ docker-compose up --build -d
 
+Stopping execution in two simple steps:
+
+    $ cd docker-ldap/5.6
+    $ docker-compose down
 
 You can just open your browser at:
 
-    http://localhost:8085
+    http://localhost
+
+## Setting Volumes
+Below is the volume example for the apache configuration:
+
+    volumes:
+        # volume for system files
+        - /home/luis/www/html:/var/www/html
+        # volume for SSL key files
+        - /home/luis/www/ssl:/etc/apache2/ssl
+        # volume for vhosts configuration environments
+        - /home/luis/www/sites-enabled:/etc/apache2/sites-enabled

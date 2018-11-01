@@ -3,11 +3,15 @@ version: '2'
 services:
   docker-lap5-deb:
     build: .
-    image: docker-lap5-deb:1.0
+    image: docker-lap5-deb:1.1
     container_name: docker-lap5-deb
     ports:
-      - "8085:80"
-      - "4435:443"
+      - "80:80"
+      - "443:443"
     restart: always
     volumes:
-      - /home/luis/www:/var/www/html
+      - /home/luis/www/html:/var/www/html
+      - /home/luis/www/ssl:/etc/apache2/ssl
+      - /home/luis/www/sites-enabled:/etc/apache2/sites-enabled
+    extra_hosts:
+      - "site.local:127.0.0.1"
