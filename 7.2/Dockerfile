@@ -13,6 +13,9 @@ ENV LOCALE pt_BR.UTF-8
 # PHP Timezone
 ENV TZ=America/Maceio
 
+# PHP default_charset
+ENV DEFAULT_CHARSET=
+
 # Set repositories
 RUN \
     echo "deb http://ftp.br.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
@@ -55,7 +58,7 @@ RUN \
 RUN \
     apt-get -yqq install apt-transport-https lsb-release ca-certificates && \
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list && \
+    echo "deb https://packages.sury.org/php/ stretch main" > /etc/apt/sources.list.d/php.list && \
     apt-get -qq update && apt-get -qqy upgrade
 
 # Install PHP7 with Xdebug (dev environment)
@@ -111,6 +114,13 @@ RUN \
     dpkg-reconfigure --frontend noninteractive tzdata && \
     echo "date.timezone = \"$TZ\";" > /etc/php/7.2/apache2/conf.d/timezone.ini && \
     echo "date.timezone = \"$TZ\";" > /etc/php/7.2/cli/conf.d/timezone.ini
+
+# PHP default charset
+RUN sed -i -e "s/default_charset = \"UTF-8\"/default_charset = $DEFAULT_CHARSET/" /etc/php/7.2/apache2/php.ini
+
+# PHP short tag
+RUN sed -i -e "s/short_open_tag = Off/short_open_tag = On/" /etc/php/7.2/apache2/php.ini
+
 
 # PHP xdebug
 RUN \
@@ -169,6 +179,18 @@ RUN echo $LD_LIBRARY_PATH && echo $ORACLE_HOME && \
     echo "extension=oci8.so" > /etc/php/7.2/mods-available/oci8.ini && \
     ln -s /etc/php/7.2/mods-available/oci8.ini /etc/php/7.2/apache2/conf.d/oci8.ini
 
+ADD oracle/php-src-PHP-7.2.11.zip /tmp
+
+RUN echo $LD_LIBRARY_PATH && echo $ORACLE_HOME && \
+    ln -s /usr/include/oracle/12.2/client64 $ORACLE_HOME/include && \
+    cd /tmp && unzip php-src-PHP-7.2.11.zip -d /usr/lib/oracle/src && \
+    cd /usr/lib/oracle/src/php-src-PHP-7.2.11/ext/pdo_oci/ && \
+    phpize7.2 && \
+    ./configure --with-pdo-oci=instantclient,/usr/lib/oracle/12.2/client64/lib/,12.2 && \
+    make && make install && \
+    echo "extension=pdo_oci.so" > /etc/php/7.2/mods-available/pdo_oci.ini && \
+    ln -s /etc/php/7.2/mods-available/pdo_oci.ini /etc/php/7.2/apache2/conf.d/pdo_oci.ini
+
 # Install Apache web server.
 RUN apt-get -yqq install apache2
 
@@ -214,6 +236,9 @@ RUN a2enmod \
     status \
     ssl
 
+# Apache2 rewrite
+RUN sed -i -e "s/AllowOverride None/AllowOverride All/g" /etc/apache2/apache2.conf
+
 # Install composer (latest version) | prestissimo to speed up composer
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
@@ -257,6 +282,7 @@ WORKDIR /var/www/html
 VOLUME /var/www/html
 
 COPY scripts/apache2-foreground /usr/bin/
+RUN chmod +x /usr/bin/apache2-foreground
 
 EXPOSE 80 443
 

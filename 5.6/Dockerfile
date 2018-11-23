@@ -157,10 +157,23 @@ RUN echo $LD_LIBRARY_PATH && echo $ORACLE_HOME && \
     cd /tmp && unzip oci8-2.0.12.zip -d /usr/lib/oracle/src && \
     cd /usr/lib/oracle/src/oci8-2.0.12 && \
     phpize && \
-    ./configure --with-oci8=instantclient,/usr/lib/oracle/12.2/client64/lib/ && \
+    ./configure --with-oci8=instantclient,$LD_LIBRARY_PATH && \
     make && make install && \
     echo "extension=oci8.so" > /etc/php/5.6/mods-available/oci8.ini && \
     ln -s /etc/php/5.6/mods-available/oci8.ini /etc/php/5.6/apache2/conf.d/oci8.ini
+
+ADD oracle/php-5.6.38.zip /tmp
+
+RUN echo $LD_LIBRARY_PATH && echo $ORACLE_HOME && \
+    ln -s /usr/include/oracle/12.2/client64 $ORACLE_HOME/include && \
+    cd /tmp && unzip php-5.6.38.zip -d /usr/lib/oracle/src && \
+    cd /usr/lib/oracle/src/php-5.6.38/ext/pdo_oci/ && \
+    phpize && \
+#    ./configure --with-pdo-oci=instantclient,$LD_LIBRARY_PATH,12.2 && \
+    ./configure --with-pdo-oci=instantclient,/usr,12.2 && \
+    make && make install && \
+    echo "extension=pdo_oci.so" > /etc/php/5.6/mods-available/pdo_oci.ini && \
+    ln -s /etc/php/5.6/mods-available/pdo_oci.ini /etc/php/5.6/apache2/conf.d/pdo_oci.ini
 
 # Install Apache web server.
 RUN apt-get -yqq install apache2

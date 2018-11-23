@@ -6,8 +6,12 @@ services:
     image: docker-lap7-deb:1.0
     container_name: docker-lap7-deb
     ports:
-      - "8087:80"
-      - "4437:443"
+      - "80:80"
+      - "443:443"
     restart: always
     volumes:
-      - /home/luis/www:/var/www/html
+      - /home/luis/www/html:/var/www/html
+      - /home/luis/www/ssl:/etc/apache2/ssl
+      - /home/luis/www/sites-enabled:/etc/apache2/sites-enabled
+    extra_hosts:
+      - "site.local:127.0.0.1"
