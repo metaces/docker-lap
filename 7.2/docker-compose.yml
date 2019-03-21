@@ -3,7 +3,7 @@ version: '2'
 services:
   docker-lap7-deb:
     build: .
-    image: docker-lap7-deb:1.0
+    image: docker-lap7-deb:1.1
     container_name: docker-lap7-deb
     ports:
       - "80:80"
@@ -14,4 +14,5 @@ services:
       - /home/luis/www/ssl:/etc/apache2/ssl
       - /home/luis/www/sites-enabled:/etc/apache2/sites-enabled
     extra_hosts:
-      - "site.local:127.0.0.1"
+      - "www.local:127.0.0.1"
+

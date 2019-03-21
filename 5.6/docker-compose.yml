@@ -14,4 +14,4 @@ services:
       - /home/luis/www/ssl:/etc/apache2/ssl
       - /home/luis/www/sites-enabled:/etc/apache2/sites-enabled
     extra_hosts:
-      - "site.local:127.0.0.1"
+      - "www.local:127.0.0.1"

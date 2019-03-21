@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM debian:stretch-20190228-slim
 
 #
 # Step 1: Installation
@@ -11,18 +11,17 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV LOCALE pt_BR.UTF-8
 
 # PHP Timezone
-ENV TZ=America/Maceio
+ENV TZ America/Maceio
 
 # PHP default_charset
 ENV DEFAULT_CHARSET=
 
 # Set repositories
-RUN \
-    echo "deb http://ftp.br.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
+RUN echo "deb http://ftp.br.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
     echo "deb-src http://ftp.br.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security stretch/updates main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb-src http://security.debian.org/debian-security stretch/updates main contrib non-free" >> /etc/apt/sources.list && \
-    apt-get -qq update && apt-get -qqy upgrade
+    apt-get -qq update --fix-missing && apt-get -qqy upgrade
 
 # Install some basic tools needed for deployment
 RUN apt-get -yqq install \
@@ -44,22 +43,21 @@ RUN apt-get -yqq install \
     locales \
     libjpeg-turbo-progs libjpeg-progs \
     pngcrush optipng \
-    libaio1
+    libaio1 \
+    cron
 
 # Install locale
-RUN \
-    sed -i -e "s/# $LOCALE/$LOCALE/" /etc/locale.gen && \
+RUN sed -i -e "s/# $LOCALE/$LOCALE/" /etc/locale.gen && \
     echo "LANG=$LOCALE">/etc/default/locale && \
-    dpkg-reconfigure --frontend=noninteractive locales && \
+    dpkg-reconfigure --frontend=$DEBIAN_FRONTEND locales && \
     update-locale LANG=$LOCALE
 
 # Configure Sury sources
 # @see https://www.noobunbox.net/serveur/auto-hebergement/installer-php-7-1-sous-debian-et-ubuntu
-RUN \
-    apt-get -yqq install apt-transport-https lsb-release ca-certificates && \
+RUN apt-get -yqq install apt-transport-https lsb-release ca-certificates && \
     wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
     echo "deb https://packages.sury.org/php/ stretch main" > /etc/apt/sources.list.d/php.list && \
-    apt-get -qq update && apt-get -qqy upgrade
+    apt-get -qq update --fix-missing && apt-get -qqy upgrade
 
 # Install PHP7 with Xdebug (dev environment)
 RUN apt-get -yqq install \
@@ -109,22 +107,24 @@ RUN apt-get -yqq install \
     libapache2-mod-php7.2
 
 # PHP Timezone
-RUN \
-    echo $TZ | tee /etc/timezone && \
-    dpkg-reconfigure --frontend noninteractive tzdata && \
+RUN echo $TZ | tee /etc/timezone && \
+    dpkg-reconfigure --frontend=$DEBIAN_FRONTEND tzdata && \
     echo "date.timezone = \"$TZ\";" > /etc/php/7.2/apache2/conf.d/timezone.ini && \
-    echo "date.timezone = \"$TZ\";" > /etc/php/7.2/cli/conf.d/timezone.ini
+    echo "date.timezone = \"$TZ\";" > /etc/php/7.2/cli/conf.d/timezone.ini && \
+    echo "date.timezone = \"$TZ\";" > /etc/php/7.2/fpm/conf.d/timezone.ini
 
 # PHP default charset
-RUN sed -i -e "s/default_charset = \"UTF-8\"/default_charset = $DEFAULT_CHARSET/" /etc/php/7.2/apache2/php.ini
+RUN sed -i -e "s/default_charset = \"UTF-8\"/default_charset = $DEFAULT_CHARSET/" /etc/php/7.2/apache2/php.ini && \
+    sed -i -e "s/default_charset = \"UTF-8\"/default_charset = $DEFAULT_CHARSET/" /etc/php/7.2/cli/php.ini && \
+    sed -i -e "s/default_charset = \"UTF-8\"/default_charset = $DEFAULT_CHARSET/" /etc/php/7.2/fpm/php.ini
 
 # PHP short tag
-RUN sed -i -e "s/short_open_tag = Off/short_open_tag = On/" /etc/php/7.2/apache2/php.ini
-
+RUN sed -i -e "s/short_open_tag = Off/short_open_tag = On/" /etc/php/7.2/apache2/php.ini && \
+    sed -i -e "s/short_open_tag = Off/short_open_tag = On/" /etc/php/7.2/cli/php.ini && \
+    sed -i -e "s/short_open_tag = Off/short_open_tag = On/" /etc/php/7.2/fpm/php.ini
 
 # PHP xdebug
-RUN \
-    wget https://github.com/xdebug/xdebug/archive/master.zip && \
+RUN wget https://github.com/xdebug/xdebug/archive/master.zip && \
     unzip master.zip && \
     cd xdebug-master && \
     phpize7.2 && \
@@ -134,8 +134,7 @@ RUN \
     cd .. && rm -fr xdebug-master master.zip
 
 # Install manually xhprof
-RUN \
-    cd /tmp && \
+RUN cd /tmp && \
     wget https://github.com/Yaoguais/phpng-xhprof/archive/master.zip && \
     unzip master.zip && \
     cd phpng-xhprof-master && \
@@ -147,8 +146,7 @@ RUN \
     echo "xhprof.output_dir=/var/www/xhprof" >> /etc/php/7.2/mods-available/xhprof.ini
 
 # Install manually APC
-RUN \
-    echo "extension=apcu.so" > /etc/php/7.2/mods-available/apcu_bc.ini && \
+RUN echo "extension=apcu.so" > /etc/php/7.2/mods-available/apcu_bc.ini && \
     echo "extension=apc.so" >> /etc/php/7.2/mods-available/apcu_bc.ini
 
 # Install SMTP.
@@ -177,7 +175,9 @@ RUN echo $LD_LIBRARY_PATH && echo $ORACLE_HOME && \
     ./configure --with-oci8=instantclient,/usr/lib/oracle/12.2/client64/lib/ && \
     make && make install && \
     echo "extension=oci8.so" > /etc/php/7.2/mods-available/oci8.ini && \
-    ln -s /etc/php/7.2/mods-available/oci8.ini /etc/php/7.2/apache2/conf.d/oci8.ini
+    ln -s /etc/php/7.2/mods-available/oci8.ini /etc/php/7.2/apache2/conf.d/oci8.ini && \
+    ln -s /etc/php/7.2/mods-available/oci8.ini /etc/php/7.2/cli/conf.d/oci8.ini && \
+    ln -s /etc/php/7.2/mods-available/oci8.ini /etc/php/7.2/fpm/conf.d/oci8.ini
 
 ADD oracle/php-src-PHP-7.2.11.zip /tmp
 
@@ -189,7 +189,9 @@ RUN echo $LD_LIBRARY_PATH && echo $ORACLE_HOME && \
     ./configure --with-pdo-oci=instantclient,/usr/lib/oracle/12.2/client64/lib/,12.2 && \
     make && make install && \
     echo "extension=pdo_oci.so" > /etc/php/7.2/mods-available/pdo_oci.ini && \
-    ln -s /etc/php/7.2/mods-available/pdo_oci.ini /etc/php/7.2/apache2/conf.d/pdo_oci.ini
+    ln -s /etc/php/7.2/mods-available/pdo_oci.ini /etc/php/7.2/apache2/conf.d/pdo_oci.ini && \
+    ln -s /etc/php/7.2/mods-available/pdo_oci.ini /etc/php/7.2/cli/conf.d/pdo_oci.ini && \
+    ln -s /etc/php/7.2/mods-available/pdo_oci.ini /etc/php/7.2/fpm/conf.d/pdo_oci.ini
 
 # Install Apache web server.
 RUN apt-get -yqq install apache2
